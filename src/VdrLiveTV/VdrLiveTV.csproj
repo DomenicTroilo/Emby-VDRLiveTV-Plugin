@@ -1,0 +1,115 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{708F39C4-8B33-4D1C-A02E-517E39F47305}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>VdrLiveTV</RootNamespace>
+    <AssemblyName>VdrLiveTV</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Interfaces.IO">
+      <HintPath>packages\Interfaces.IO.1.0.0.5\lib\portable-net45+sl4+wp71+win8+wpa81\Interfaces.IO.dll</HintPath>
+    </Reference>
+    <Reference Include="MediaBrowser.Common, Version=3.0.5852.21891, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\MediaBrowser.Common.3.0.640\lib\net45\MediaBrowser.Common.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="MediaBrowser.Controller, Version=3.0.5852.21889, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\MediaBrowser.Server.Core.3.0.640\lib\net45\MediaBrowser.Controller.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="MediaBrowser.Model, Version=3.0.5852.21892, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\MediaBrowser.Common.3.0.640\lib\net45\MediaBrowser.Model.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="ServiceStack.Client, Version=4.0.52.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ServiceStack.Client.4.0.52\lib\net40\ServiceStack.Client.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="ServiceStack.Interfaces, Version=4.0.0.0, Culture=neutral, PublicKeyToken=e06fbc6124f57c43, processorArchitecture=MSIL">
+      <HintPath>..\packages\ServiceStack.Interfaces.4.0.52\lib\portable-wp80+sl5+net40+win8+monotouch+monoandroid+xamarin.ios10\ServiceStack.Interfaces.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="ServiceStack.Text, Version=4.0.52.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ServiceStack.Text.4.0.52\lib\net40\ServiceStack.Text.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Configuration\ConfigurationPage.cs" />
+    <Compile Include="LiveTvService.cs" />
+    <Compile Include="Plugin.cs" />
+    <Compile Include="Configuration\PluginConfiguration.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="vdr\UpdateTimer.cs" />
+    <Compile Include="vdr\DeleteRecording.cs" />
+    <Compile Include="vdr\CreateTimer.cs" />
+    <Compile Include="vdr\DeleteTimer.cs" />
+    <Compile Include="vdr\GetRecordings.cs" />
+    <Compile Include="vdr\GetTimers.cs" />
+    <Compile Include="vdr\GetEvents.cs" />
+    <Compile Include="vdr\GetChannels.cs" />
+    <Compile Include="vdr\IVdrApiClient.cs" />
+    <Compile Include="vdr\Utils.cs" />
+    <Compile Include="vdr\VdrRecording.cs" />
+    <Compile Include="vdr\VdrTimer.cs" />
+    <Compile Include="vdr\VdrEvent.cs" />
+    <Compile Include="vdr\VdrChannel.cs" />
+    <Compile Include="vdr\VdrRestfulApiClient.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Configuration\ConfigurationPage.html" />
+    <Content Include="Images\VdrLiveTV.png" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!--
+  <PropertyGroup>
+    <PostBuildEvent>xcopy "$(TargetPath)" "\var\lib\emby-server\plugins\" /y</PostBuildEvent>
+  </PropertyGroup>
+  -->
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

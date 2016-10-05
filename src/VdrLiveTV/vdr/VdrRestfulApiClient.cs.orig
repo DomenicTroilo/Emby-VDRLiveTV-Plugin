@@ -1,0 +1,201 @@
+﻿using MediaBrowser.Model.LiveTv;
+using MediaBrowser.Controller.LiveTv;
+using ServiceStack;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading.Tasks;
+using System.Web;
+using System.Net;
+using System.IO;
+
+namespace VdrLiveTV.vdr
+{
+    public class VdrRestfulApiClient : IVdrApiClient
+    {
+        string baseUrl;
+        JsonServiceClient client;
+
+        public VdrRestfulApiClient(string host, int port)
+        {
+            baseUrl = string.Format("http://{0}:{1}", host, port);
+            client = new JsonServiceClient(baseUrl);
+        }
+
+        public async Task<List<ChannelInfo>> GetChannelsAsync()
+        {
+            List<ChannelInfo> channels = new List<ChannelInfo>();
+
+            GetChannelsResponse response = await client.GetAsync(new GetChannelsRequest());
+
+            if (response.Channels != null)
+            {
+                foreach (VdrChannel channel in response.Channels)
+                {
+                    channels.Add(new ChannelInfo()
+                    {
+                        Id = channel.channel_id,
+                        ChannelType = channel.is_radio ? ChannelType.Radio : ChannelType.TV,
+                        Name = channel.name,
+                        Number = channel.number.ToString(),
+                        HasImage = channel.image,
+                        ImageUrl = string.Format("{0}/channels/image/{1}", baseUrl, channel.channel_id)
+                    });
+                }
+            }
+
+            return channels;
+        }
+
+        public async Task<List<ProgramInfo>> GetEventAsync(string channelId, DateTime startDateUtc, DateTime endDateUtc)
+        {
+            List<ProgramInfo> events = new List<ProgramInfo>();
+
+            GetEventsResponse response = await client.GetAsync(new GetEventsRequest() {
+                channel = channelId + ".json",
+                from = Utils.DateTimeToUnixTimeStamp(startDateUtc).ToString(),
+                // from = "",
+                timespan = (endDateUtc - startDateUtc).TotalSeconds.ToString()
+            });
+
+            if (response.Events != null)
+            {
+                foreach (VdrEvent ev in response.Events)
+                {
+                    events.Add(new ProgramInfo()
+                    {
+                        Id = ev.id.ToString(),
+                        ChannelId = ev.channel,
+                        Name = ev.title,
+                        EpisodeTitle = ev.short_text,
+                        Overview = ev.description,
+                        // StartDate = Utils.UnixTimeStampToDateTime(ev.start_time).ToLocalTime(),
+                        StartDate = Utils.UnixTimeStampToDateTime(ev.start_time),
+                        // EndDate = Utils.UnixTimeStampToDateTime(ev.start_time + ev.duration).ToLocalTime(),
+                        EndDate = Utils.UnixTimeStampToDateTime(ev.start_time + ev.duration),
+                        HasImage = (ev.images > 0),
+                        ImageUrl = string.Format("{0}/events/image/{1}/0", baseUrl, ev.id)
+                    });
+                }
+            }
+	    else
+	    {
+	     _logger.Info("[VDR LiveTV] GetProgramsAsync - error | {0} | {1} - {2} ...", channelId, startDateUtc, endDateUtc); 
+	    }
+
+            return events;
+        }
+
+        public async Task<byte[]> GetEventImageAsync(int evendId, int imageNumber)
+        {
+            string url = string.Format("{0}/events/image/{1}/{2}", baseUrl, evendId, imageNumber);
+            byte[] imgData = url.GetBytesFromUrl();
+
+            return imgData;
+        }
+
+        public async Task<List<RecordingInfo>> GetRecordingsAsync()
+        {
+            List<RecordingInfo> recordings = new List<RecordingInfo>();
+
+            GetRecordingsResponse response = await client.GetAsync(new GetRecordingsRequest());
+
+            if (response.Recordings != null)
+            {
+                foreach (VdrRecording recording in response.Recordings)
+                {
+                    recordings.Add(new RecordingInfo()
+                    {
+                        Id = recording.number.ToString(),
+                        ChannelId = recording.channel_id,
+                        Name = recording.event_title,
+                        EpisodeTitle = recording.event_short_text,
+                        Overview = recording.event_description,
+                        StartDate = Utils.UnixTimeStampToDateTime(recording.event_start_time),
+                        EndDate = Utils.UnixTimeStampToDateTime(recording.event_start_time + recording.event_duration)
+                    });
+                }
+            }
+
+            return recordings;
+        }
+
+        public async Task DeleteRecording(string recordingId)
+        {
+            await client.DeleteAsync(new DeleteRecordingRequest() { Number = recordingId });
+        }
+
+        public async Task<List<TimerInfo>> GetTimersAsync()
+        {
+            List<TimerInfo> timers = new List<TimerInfo>();
+
+            GetTimersResponse response = await client.GetAsync(new GetTimersRequest());
+
+            if (response.timers != null)
+            {
+                foreach (VdrTimer timer in response.timers)
+                {
+                    RecordingStatus status = RecordingStatus.New;
+
+		    if (timer.is_recording)
+                        status = RecordingStatus.InProgress;
+
+                    timers.Add(new TimerInfo()
+                    {
+                        Id = timer.id,
+                        ChannelId = timer.channel,
+                        StartDate = DateTime.Parse(timer.start_timestamp).ToUniversalTime(),
+                        EndDate = DateTime.Parse(timer.stop_timestamp).ToUniversalTime(),
+                        Name = timer.filename,
+                        Priority = timer.priority,
+                        ProgramId = timer.event_id.ToString(),
+                        Status = status
+                    });
+                }
+            }
+
+            return timers;
+        }
+
+        public async Task CreateTimer(TimerInfo info)
+        {
+            DateTime startTime = info.StartDate.AddSeconds(info.PrePaddingSeconds * -1);
+            DateTime endTime = info.EndDate.AddSeconds(info.PostPaddingSeconds);
+
+            CreateTimerResponse response = await client.PostAsync(new CreateTimerRequest
+            {
+                file = info.Name,
+                channel = info.ChannelId,
+                eventid = info.ProgramId,
+                start = int.Parse(startTime.ToLocalTime().ToString("HHmm")),
+                stop = int.Parse(endTime.ToLocalTime().ToString("HHmm")),
+                day = startTime.ToString("yyyy-MM-dd"),
+                weekdays = "-------",
+            });
+        }
+
+        public async Task UpdateTimer(TimerInfo info)
+        {
+            DateTime startTime = info.StartDate.AddSeconds(info.PrePaddingSeconds * -1);
+            DateTime endTime = info.EndDate.AddSeconds(info.PostPaddingSeconds);
+
+            UpdateTimerResponse response = await client.PutAsync(new UpdateTimerRequest
+            {
+                timer_id = info.Id,
+                file = info.Name,
+                channel = info.ChannelId,
+                start = int.Parse(startTime.ToLocalTime().ToString("HHmm")),
+                stop = int.Parse(endTime.ToLocalTime().ToString("HHmm")),
+                day = startTime.ToString("yyyy-MM-dd"),
+                weekdays = "-------",
+            });
+        }
+
+        public async Task CancelTimer(string timerId)
+        {
+            await client.DeleteAsync(new DeleteTimerRequest() { TimerId = timerId });
+        }
+    }
+}
