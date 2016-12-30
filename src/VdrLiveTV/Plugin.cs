@@ -11,7 +11,7 @@ namespace VdrLiveTV
 {
     public class Plugin : BasePlugin<PluginConfiguration>
     {
-        public static readonly string VERSION = "0.3.5";
+        public static readonly string VERSION = "0.3.7";
 
         /// <summary>
         /// Gets the instance.

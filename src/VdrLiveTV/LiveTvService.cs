@@ -291,6 +291,7 @@ namespace VdrLiveTV
                 Id = id,
                 Path = url,
                 Protocol = MediaProtocol.Http,
+	        SupportsProbing = false,
                 MediaStreams = new List<MediaStream>
                         {
                             new MediaStream
